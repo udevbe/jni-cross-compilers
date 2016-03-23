@@ -1,4 +1,4 @@
-FROM zubzub/cross-compilers/linux
+FROM zubnix/jni-cross-compilers:linux-source
 MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 
 ENV CROSS_TRIPLE i686-pc-linux-gnu
