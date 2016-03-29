@@ -4,6 +4,13 @@ MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 ENV CROSS_TRIPLE arm-linux-gnueabihf
 ENV CROSS_ROOT /usr/toolchain
 ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}
+ENV PATH ${CROSS_ROOT}/bin:${PATH}
+ENV PKG_CONFIG_PATH ${SYS_ROOT}/share/pkgconfig:${SYS_ROOT}/lib/pkgconfig:$PKG_CONFIG_PATH
+#setup cmake toolchain file
+COPY Toolchain.cmake ${CROSS_ROOT}/
+ENV CMAKE_TOOLCHAIN_FILE ${CROSS_ROOT}/Toolchain.cmake
+
+ENV RASPBERRYPI_TOOLS_COMMIT f5642106425d430e1f82ee064121a5fd0e05a386
 
 # Raspberry Pi is ARMv6+VFP2, Debian armhf is ARMv7+VFP3
 # Since this Dockerfile is targeting linux-arm from Raspberry Pi onward,
@@ -11,79 +18,80 @@ ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}
 # We could use Debian's armel, but we'd have softfp and loose a good deal
 # of performance.
 # See: https://wiki.debian.org/RaspberryPi
-ENV RASPBERRYPI_TOOLS_COMMIT f5642106425d430e1f82ee064121a5fd0e05a386
-RUN curl -L https://github.com/raspberrypi/tools/archive/${RASPBERRYPI_TOOLS_COMMIT}.tar.gz | tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*"
-RUN cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} && \
-    rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}
-ENV PATH ${CROSS_ROOT}/bin:${PATH}
-ENV PKG_CONFIG_PATH ${SYS_ROOT}/share/pkgconfig:${SYS_ROOT}/lib/pkgconfig:$PKG_CONFIG_PATH
-
-#setup cmake toolchain file
-COPY Toolchain.cmake ${CROSS_ROOT}/
-ENV CMAKE_TOOLCHAIN_FILE ${CROSS_ROOT}/Toolchain.cmake
+RUN curl -L https://github.com/raspberrypi/tools/archive/${RASPBERRYPI_TOOLS_COMMIT}.tar.gz | tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*" \
+&& cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} \
+&& rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT} \
 
 #build libffi cross (jdk cross dep)
-WORKDIR /usr/src/libffi
-RUN ./autogen.sh && \
-    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT} && \
-    make && \
-    make install
+&& mkdir -p /usr/src/libffi \
+&& cd /usr/src/libffi \
+&& ./autogen.sh \
+&& ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT} \
+&& make \
+&& make install \
 
 #build freetype cross (jkd cross dep)
-WORKDIR /usr/src/freetype
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
+&& mkdir -p /usr/src/freetype \
+&& cd /usr/src/freetyp \
+&& cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
           -DCMAKE_INSTALL_PREFIX:PATH=${SYS_ROOT} \
-          -DBUILD_SHARED_LIBS:BOOL=true . && \
-    make && \
-    make install
+          -DBUILD_SHARED_LIBS:BOOL=true . \
+&& make \
+&& make install \
 
 #build alsa cross (jdk cross dep)
-WORKDIR /usr/src/alsa
-RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT} && \
-    make && \
-    make install
+&& mkdir -p /usr/src/alsa \
+&& cd /usr/src/alsa \
+&& CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT} \
+&& make \
+&& make install \
 
 #build zlib cross (X cross dep)
-WORKDIR /usr/src/zlib
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT} && \
-    make && \
-    make install
+&& mkdir -p /usr/src/zlib \
+&& AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT} \
+&& make \
+&& make install \
 
 #build libpng cross (X cross dep)
-WORKDIR /usr/src/png
-RUN LDFLAGS="-L${SYS_ROOT}/usr/local/lib" CPPFLAGS="-I${SYS_ROOT}/usr/local/include" ./configure --prefix=${SYS_ROOT}  --host=${CROSS_TRIPLE} && \
-    make && \
-    make install
+&& mkdir -p /usr/src/png \
+&& cd /usr/src/png \
+&& LDFLAGS="-L${SYS_ROOT}/usr/local/lib" CPPFLAGS="-I${SYS_ROOT}/usr/local/include" ./configure --prefix=${SYS_ROOT}  --host=${CROSS_TRIPLE} \
+&& make \
+&& make install \
 
 #build expat cross (X cross dep)
-WORKDIR /usr/src/expat
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT} --host=${CROSS_TRIPLE} && \
-    make && \
-    make install
+&& mkdir -p /usr/src/expat \
+&& cd /usr/src/expat \
+&& AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT} --host=${CROSS_TRIPLE} \
+&& make \
+&& make install \
 
 #build openssl cross (X cross dep)
-WORKDIR /usr/src/openssl
-RUN ./Configure dist --prefix=${SYS_ROOT} && \
-    make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" && \
-    make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw
+&& mkdir -p /usr/src/openssl \
+&& cd usr/src/openssl \
+&& ./Configure dist --prefix=${SYS_ROOT} \
+&& make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" \
+&& make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw \
 
 #build X cross (jdk cross dep)
-WORKDIR /usr/src/xorg
-RUN CONFFLAGS="--disable-static \
-               --enable-malloc0returnsnull \
-               --host=${CROSS_TRIPLE} \
-               --prefix=${SYS_ROOT} \
-               --build=x86_64-unknown-linux-gnu" \
-    CC_FOR_BUILD="/usr/bin/gcc" \
-    ACLOCAL="aclocal -I ${SYS_ROOT}/share/aclocal/" \
-    #we only build the minimal required modules needed by the jdk
-    ./build.sh --clone --modfile xorg-modules
+&& mkdir -p /usr/src/xorg \
+&& cd /usr/src/xorg \
+&& CONFFLAGS="--disable-static \
+              --enable-malloc0returnsnull \
+              --host=${CROSS_TRIPLE} \
+              --prefix=${SYS_ROOT} \
+              --build=x86_64-unknown-linux-gnu" \
+   CC_FOR_BUILD="/usr/bin/gcc" \
+   ACLOCAL="aclocal -I ${SYS_ROOT}/share/aclocal/" \
+   #we only build the minimal required modules needed by the jdk
+   ./build.sh --clone --modfile xorg-modules \
 
 #build openjdk cross
-WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
-    sync && \
-    ./get_source.sh
+&& mkdir -p /usr/src/jdk \
+&& cd /usr/src/jdk \
+&& chmod +x get_source.sh \
+&& sync \
+&& ./get_source.sh
 
 #BUG. BUILD_CC and BUILD_LD will resolve from the cross root path, thus building for the wrong arch.
 #Therefore we must set an absolute path.
@@ -116,6 +124,6 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/"
-RUN make clean all images profiles CONF=linux-arm-normal-zero-release
+                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" && \
+make clean all images profiles CONF=linux-arm-normal-zero-release
 
