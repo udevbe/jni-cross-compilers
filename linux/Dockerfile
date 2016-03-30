@@ -22,7 +22,10 @@ RUN apt-get update && apt-get -y install \
     bash \
     libltdl-dev \
     ca-certificates \
-    openjdk-8-jdk \
+    openjdk-8-jdk && \
+    apt-get clean && \
+    apt-get autoclean && \
+    apt-get autoremove \
 
 #gather all cross dep sources
 
