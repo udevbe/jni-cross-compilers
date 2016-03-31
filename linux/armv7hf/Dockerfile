@@ -1,4 +1,4 @@
-FROM zubzub/cross-compilers:linux-single-layer
+FROM zubnix/jni-cross-compilers:linux-source
 MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 
 ENV CROSS_TRIPLE arm-linux-gnueabihf
@@ -90,10 +90,6 @@ RUN CONFFLAGS="--disable-static \
     rm -rf /usr/src/xorg
 
 #build openjdk cross
-WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
-    sync && \
-    ./get_source.sh
 
 #BUG. BUILD_CC and BUILD_LD will resolve from the cross root path, thus building for the wrong arch.
 #Therefore we must set an absolute path.
@@ -101,10 +97,14 @@ ENV BUILD_CC /usr/bin/gcc
 #BUG. BUILD_LD is not correctly used. Therefore we must set gcc as ld to make it work
 ENV BUILD_LD /usr/bin/gcc
 
+WORKDIR /usr/src/jdk
+RUN chmod +x get_source.sh && \
+    sync && \
+    ./get_source.sh && \
+
 #BUG. configure only looks for gcc/g++ named binaries not ones that may be prefixed with a the devkit names eg:
 #x86_64-buildroot-linux-gnu-gcc. A workaround is to create symlinks for gcc/g++
-#
-RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
+    ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-g++ ${CROSS_ROOT}/bin/g++ && \
 
 #BUG. --disable-headful is ignored during build (X still required for compiling and linking) and simply disables any
@@ -127,9 +127,13 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
                 --prefix=${SYS_ROOT} \
-                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/"
-RUN make images CONF=linux-arm-normal-zero-release && \
+                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" && \
+    make images CONF=linux-arm-normal-zero-release && \
     make install && \
-    cd /usr/src && \
-    rm -rf /usr/src/jdk
+    cd /usr && \
+    rm -rf /usr/src
 
+RUN apt-get remove -y mercurial unzip zip git curl ca-certificates && \
+    apt-get clean && \
+    apt-get autoclean && \
+    apt-get autoremove -y
