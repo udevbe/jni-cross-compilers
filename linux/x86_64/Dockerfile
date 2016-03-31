@@ -6,49 +6,65 @@ WORKDIR /usr/src/libffi
 RUN ./autogen.sh && \
     ./configure && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/libffi
 
 #build freetype native (jkd native dep)
 WORKDIR /usr/src/freetype
 RUN cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr/local/ \
           -DBUILD_SHARED_LIBS:BOOL=true . && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/freetype
 
 #build alsa native (jdk native dep)
 WORKDIR /usr/src/alsa
 RUN ./configure && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/alsa
 
 #build zlib native (X native dep)
 WORKDIR /usr/src/zlib
 RUN ./configure && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/zlib
 
 #build libpng native (X native dep)
 WORKDIR /usr/src/png
 RUN ./configure && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/png
 
 #build expat native (X native dep)
 WORKDIR /usr/src/expat
 RUN ./configure && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/expat
 
 #build openssl native (X native dep)
 WORKDIR /usr/src/openssl
 RUN ./Configure dist && \
     make && \
-    make install_sw
+    make install_sw && \
+    cd /usr/src && \
+    rm -rf /usr/src/openssl
 
 #build X native (jdk native dep)
 WORKDIR /usr/src/xorg
     #we only build the minimal required modules needed by the jdk
-RUN ./build.sh --clone --modfile xorg-modules
+RUN ./build.sh --clone --modfile xorg-modules && \
+    cd /usr/src && \
+    rm -rf /usr/src/xorg
 
 #build openjdk native
 WORKDIR /usr/src/jdk
@@ -70,5 +86,13 @@ RUN chmod +x configure && \
                 --with-freetype-lib=/usr/local/lib \
                 --with-cups-include=/usr/include/cups/ \
                 --with-jvm-variants=zero \
-                --disable-debug-symbols
-RUN make clean all images profiles CONF=linux-x86_64-normal-zero-release
+                --disable-debug-symbols && \
+    make images CONF=linux-arm-normal-zero-release && \
+    make install && \
+    cd /usr && \
+    rm -rf /usr/src
+
+RUN apt-get remove -y mercurial unzip zip git curl ca-certificates && \
+    apt-get clean && \
+    apt-get autoclean && \
+    apt-get autoremove -y
