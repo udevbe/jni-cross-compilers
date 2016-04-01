@@ -8,7 +8,7 @@ RUN apt-get update && apt-get -y install \
     gettext \
     byacc \
     mercurial \
-    tar \
+    cpio \
     unzip \
     zip \
     libcups2-dev \
