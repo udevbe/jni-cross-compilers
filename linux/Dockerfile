@@ -8,7 +8,7 @@ RUN apt-get update && apt-get -y install \
     gettext \
     byacc \
     mercurial \
-    cpio \
+    tar \
     unzip \
     zip \
     libcups2-dev \
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get -y install \
     bash \
     libltdl-dev \
     ca-certificates \
-    openjdk-8-jdk && \
+    openjdk-8-jdk-headless && \
     apt-get clean && \
     apt-get autoclean && \
     apt-get autoremove \
