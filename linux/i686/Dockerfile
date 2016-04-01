@@ -133,7 +133,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     cd /usr && \
     rm -rf /usr/src
 
-RUN apt-get remove -y mercurial unzip zip git curl tar && \
+RUN apt-get remove -y mercurial unzip zip git curl && \
     apt-get clean && \
     apt-get autoclean && \
     apt-get autoremove -y
