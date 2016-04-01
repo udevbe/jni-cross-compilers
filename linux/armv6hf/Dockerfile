@@ -134,7 +134,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-interpreter=cpp \
                 --prefix=${SYS_ROOT} \
                 --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" && \
-    make images CONF=linux-arm-normal-zero-release && \
+    make images && \
     make install && \
     cd /usr && \
     rm -rf /usr/src

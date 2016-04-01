@@ -87,7 +87,7 @@ RUN chmod +x configure && \
                 --with-cups-include=/usr/include/cups/ \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols && \
-    make images CONF=linux-arm-normal-zero-release && \
+    make images && \
     make install && \
     cd /usr && \
     rm -rf /usr/src
