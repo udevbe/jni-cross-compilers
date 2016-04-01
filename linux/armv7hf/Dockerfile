@@ -133,7 +133,7 @@ RUN chmod +x get_source.sh && \
     cd /usr && \
     rm -rf /usr/src
 
-RUN apt-get remove -y mercurial unzip zip git curl ca-certificates && \
+RUN apt-get remove -y mercurial unzip zip git curl tar && \
     apt-get clean && \
     apt-get autoclean && \
     apt-get autoremove -y
