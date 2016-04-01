@@ -12,6 +12,7 @@ ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}
 # of performance.
 # See: https://wiki.debian.org/RaspberryPi
 ENV RASPBERRYPI_TOOLS_COMMIT f5642106425d430e1f82ee064121a5fd0e05a386
+WORKDIR /usr/src
 RUN curl -L https://github.com/raspberrypi/tools/archive/${RASPBERRYPI_TOOLS_COMMIT}.tar.gz | tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*"
 RUN cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} && \
     rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}
