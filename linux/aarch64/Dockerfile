@@ -60,6 +60,9 @@ RUN LDFLAGS="-L${SYS_ROOT}/usr/local/lib" CPPFLAGS="-I${SYS_ROOT}/usr/local/incl
     rm -rf /usr/src/png
 
 #build expat cross (X cross dep)
+WORKDIR /usr/src/expat/conftools
+RUN cp -f /usr/share/misc/config.sub config.sub
+RUN cp -f /usr/share/misc/config.guess config.guess
 WORKDIR /usr/src/expat
 RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT} --host=${CROSS_TRIPLE} && \
     make && \
