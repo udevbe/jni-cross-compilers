@@ -17,6 +17,7 @@ RUN apt-get update && apt-get -y install \
     cmake \
     autoconf \
     automake \
+    autopoint \
     pkg-config \
     build-essential \
     bash \
