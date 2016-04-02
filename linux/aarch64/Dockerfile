@@ -134,7 +134,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
                 --prefix=${SYS_ROOT} \
-                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/ && \
+                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" && \
     make images && \
     make install && \
     cd /usr && \
