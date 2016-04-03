@@ -84,7 +84,8 @@ RUN ./Configure dist --prefix=${SYS_ROOT} && \
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
-RUN CONFFLAGS="--disable-static \
+RUN sync && \
+    CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
                --prefix=${SYS_ROOT} \
