@@ -139,8 +139,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     make images && \
     make install && \
     cd /usr && \
-    rm -rf /usr/src/* && \
-    rm -rf /usr/src
+    rm -rf /usr/src/*
 
 RUN apt-get remove -y mercurial unzip zip git curl && \
     apt-get clean && \
