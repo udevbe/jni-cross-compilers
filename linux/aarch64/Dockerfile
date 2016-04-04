@@ -98,7 +98,8 @@ RUN rm -rf jdk/
 RUN hg clone http://hg.openjdk.java.net/aarch64-port/jdk8u/ /usr/src/jdk
 
 WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
+RUN sync && \
+    chmod +x get_source.sh && \
     sync && \
     ./get_source.sh
 
@@ -138,6 +139,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     make images && \
     make install && \
     cd /usr && \
+    rm -rf /usr/src/* && \
     rm -rf /usr/src
 
 RUN apt-get remove -y mercurial unzip zip git curl && \

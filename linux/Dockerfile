@@ -26,7 +26,7 @@ RUN apt-get update && \
     openjdk-8-jdk-headless && \
     apt-get clean && \
     apt-get autoclean && \
-    apt-get autoremove
+    apt-get autoremove -y
 
 #gather all cross dep sources
 

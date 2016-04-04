@@ -98,7 +98,8 @@ ENV BUILD_CC /usr/bin/gcc
 ENV BUILD_LD /usr/bin/gcc
 
 WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
+RUN sync && \
+    chmod +x get_source.sh && \
     sync && \
     ./get_source.sh && \
 

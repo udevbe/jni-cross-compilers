@@ -68,7 +68,8 @@ RUN ./build.sh --clone --modfile xorg-modules && \
 
 #build openjdk native
 WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
+RUN sync && \
+    chmod +x get_source.sh && \
     sync && \
     ./get_source.sh
 

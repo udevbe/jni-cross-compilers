@@ -84,7 +84,8 @@ RUN ./Configure dist --prefix=${SYS_ROOT} && \
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
-RUN sync && \
+#for some strange reason, we need to install the host x11 dev files, else the build fails.
+RUN apt-get -y install libx11-dev && \
     CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
@@ -95,11 +96,16 @@ RUN sync && \
     #we only build the minimal required modules needed by the jdk
     ./build.sh --clone --modfile xorg-modules && \
     cd /usr/src && \
-    rm -rf /usr/src/xorg
+    rm -rf /usr/src/xorg && \
+    apt-get remove -y libx11-dev && \
+    apt-get clean && \
+    apt-get autoclean && \
+    apt-get autoremove -y
 
 #build openjdk cross
 WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
+RUN sync && \
+    chmod +x get_source.sh && \
     sync && \
     ./get_source.sh
 
