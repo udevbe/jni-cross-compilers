@@ -12,6 +12,7 @@ ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}
 # of performance.
 # See: https://wiki.debian.org/RaspberryPi
 ENV RASPBERRYPI_TOOLS_COMMIT f5642106425d430e1f82ee064121a5fd0e05a386
+WORKDIR /usr/src
 RUN curl -L https://github.com/raspberrypi/tools/archive/${RASPBERRYPI_TOOLS_COMMIT}.tar.gz | tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*"
 RUN cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} && \
     rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}
@@ -27,7 +28,9 @@ WORKDIR /usr/src/libffi
 RUN ./autogen.sh && \
     ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT} && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/libffi
 
 #build freetype cross (jkd cross dep)
 WORKDIR /usr/src/freetype
@@ -35,41 +38,55 @@ RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
           -DCMAKE_INSTALL_PREFIX:PATH=${SYS_ROOT} \
           -DBUILD_SHARED_LIBS:BOOL=true . && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/freetype
 
 #build alsa cross (jdk cross dep)
 WORKDIR /usr/src/alsa
 RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT} && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/alsa
 
 #build zlib cross (X cross dep)
 WORKDIR /usr/src/zlib
 RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT} && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/zlib
 
 #build libpng cross (X cross dep)
 WORKDIR /usr/src/png
 RUN LDFLAGS="-L${SYS_ROOT}/usr/local/lib" CPPFLAGS="-I${SYS_ROOT}/usr/local/include" ./configure --prefix=${SYS_ROOT}  --host=${CROSS_TRIPLE} && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/png
 
 #build expat cross (X cross dep)
 WORKDIR /usr/src/expat
 RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT} --host=${CROSS_TRIPLE} && \
     make && \
-    make install
+    make install && \
+    cd /usr/src && \
+    rm -rf /usr/src/expat
 
 #build openssl cross (X cross dep)
 WORKDIR /usr/src/openssl
 RUN ./Configure dist --prefix=${SYS_ROOT} && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" && \
-    make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw
+    make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw && \
+    cd /usr/src && \
+    rm -rf /usr/src/openssl
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
-RUN CONFFLAGS="--disable-static \
+#for some strange reason, we need to install the host x11 dev files, else the build fails.
+RUN apt-get -y install libx11-dev && \
+    CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
                --prefix=${SYS_ROOT} \
@@ -77,11 +94,18 @@ RUN CONFFLAGS="--disable-static \
     CC_FOR_BUILD="/usr/bin/gcc" \
     ACLOCAL="aclocal -I ${SYS_ROOT}/share/aclocal/" \
     #we only build the minimal required modules needed by the jdk
-    ./build.sh --clone --modfile xorg-modules
+    ./build.sh --clone --modfile xorg-modules && \
+    cd /usr/src && \
+    rm -rf /usr/src/xorg && \
+    apt-get remove -y libx11-dev && \
+    apt-get clean && \
+    apt-get autoclean && \
+    apt-get autoremove -y
 
 #build openjdk cross
 WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
+RUN sync && \
+    chmod +x get_source.sh && \
     sync && \
     ./get_source.sh
 
@@ -116,7 +140,16 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/"
-RUN make clean all images profiles CONF=linux-arm-normal-zero-release
+                --prefix=${SYS_ROOT} \
+                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" && \
+    make images && \
+    make install && \
+    cd /usr && \
+    rm -rf /usr/src
+
+RUN apt-get remove -y mercurial unzip zip git curl && \
+    apt-get clean && \
+    apt-get autoclean && \
+    apt-get autoremove -y
 
 WORKDIR /build

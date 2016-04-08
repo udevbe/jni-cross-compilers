@@ -71,6 +71,7 @@ Builtin commands:
     update-image
     update-script
     update
+
 For command help use: $0 help <command>
 ENDHELP
     fi
