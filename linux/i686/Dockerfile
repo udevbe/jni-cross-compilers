@@ -112,3 +112,5 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --disable-debug-symbols \
                 --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/"
 RUN make clean all images profiles CONF=linux-x86-normal-client-release
+
+WORKDIR /build

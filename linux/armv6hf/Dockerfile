@@ -119,3 +119,4 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/"
 RUN make clean all images profiles CONF=linux-arm-normal-zero-release
 
+WORKDIR /build
