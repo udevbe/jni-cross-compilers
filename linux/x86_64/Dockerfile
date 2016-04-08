@@ -72,3 +72,5 @@ RUN chmod +x configure && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols
 RUN make clean all images profiles CONF=linux-x86_64-normal-zero-release
+
+WORKDIR /build
