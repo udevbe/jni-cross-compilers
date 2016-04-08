@@ -20,7 +20,7 @@ if [[ -n $BUILDER_UID ]] && [[ -n $BUILDER_GID ]]; then
     useradd -o -g $BUILDER_GID -u $BUILDER_UID $BUILDER_USER 2> /dev/null
 
     # Run the command as the specified user/group.
-    exec chpst -u :$BUILDER_UID:$BUILDER_GID "$@"
+    exec sudo -u \#$BUILDER_UID -g \#$BUILDER_GID "$@"
 else
     # Just run the command as root.
     exec "$@"
