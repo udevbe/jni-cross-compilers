@@ -49,7 +49,7 @@ WORKDIR /usr/src/png
 RUN curl -L ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng12/libpng-1.2.56.tar.gz | tar xvz -C /usr/src/png --strip-components 1
 
 #expat (X dep)
-WORkDIR /usr/src/expat
+WORKDIR /usr/src/expat
 RUN curl -L http://ncu.dl.sourceforge.net/project/expat/expat/2.1.0/expat-2.1.0.tar.gz | tar xvz -C /usr/src/expat --strip-components 1
 
 #openssl (X dep)
@@ -63,3 +63,8 @@ COPY xorg-modules /usr/src/xorg/
 
 #openjdk
 RUN hg clone http://hg.openjdk.java.net/jdk8u/jdk8u /usr/src/jdk
+
+COPY dockcross/entrypoint.sh dockcross/dockcross /dockcross/
+
+ENTRYPOINT ["/dockcross/entrypoint.sh"]
+
