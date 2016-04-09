@@ -23,8 +23,8 @@ RUN apt-get -y install \
     bash \
     libltdl-dev \
     ca-certificates \
-    openjdk-8-jdk-headless && \
-    sudo \
+    openjdk-8-jdk-headless \
+    sudo && \
     apt-get clean && \
     apt-get autoclean && \
     apt-get autoremove -y
