@@ -97,4 +97,8 @@ RUN apt-get remove -y mercurial unzip zip git curl && \
     apt-get clean && \
     apt-get autoclean && \
     apt-get autoremove -y
+
+COPY entrypoint.sh dockcross /dockcross/
+
+ENTRYPOINT ["/dockcross/entrypoint.sh"]
 WORKDIR /build

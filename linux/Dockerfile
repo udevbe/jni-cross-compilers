@@ -68,8 +68,3 @@ COPY xorg-modules /usr/src/xorg/
 
 #openjdk
 RUN hg clone http://hg.openjdk.java.net/jdk8u/jdk8u /usr/src/jdk
-
-COPY dockcross/entrypoint.sh dockcross/dockcross /dockcross/
-
-ENTRYPOINT ["/dockcross/entrypoint.sh"]
-WORKDIR /build

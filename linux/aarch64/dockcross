@@ -129,8 +129,7 @@ FINAL_CONFIG=${ARG_CONFIG-${DOCKCROSS_CONFIG-$DEFAULT_CONFIG}}
 [[ -f "$FINAL_CONFIG" ]] && source "$FINAL_CONFIG"
 
 # Set the docker image
-DEFAULT_IMAGE=zubnix/jni-cross-compilers:linux-source
-FINAL_IMAGE=${ARG_IMAGE-${DOCKCROSS_IMAGE-$DEFAULT_IMAGE}}
+FINAL_IMAGE=zubnix/jni-cross-compilers:linux-aarch64
 
 # Set the docker run extra args (if any)
 FINAL_ARGS=${ARG_ARGS-${DOCKCROSS_ARGS}}
@@ -180,7 +179,7 @@ docker run -i -t --rm \
 #
 #   To install the dockcross helper, run the following commands:
 #
-#       docker run zubnix/jni-cross-compiler:desired_arch > dockcross
+#       docker run zubnix/jni-cross-compiler:aarch64 > dockcross
 #       chmod +x dockcross
 #
 #   You may then wish to move dockcross to somewhere in your path.
