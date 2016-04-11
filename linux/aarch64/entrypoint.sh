@@ -25,3 +25,4 @@ else
     # Just run the command as root.
     exec "$@"
 fi
+
