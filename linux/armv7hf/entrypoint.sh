@@ -20,7 +20,7 @@ if [[ -n $BUILDER_UID ]] && [[ -n $BUILDER_GID ]]; then
     useradd -o -g $BUILDER_GID -u $BUILDER_UID $BUILDER_USER 2> /dev/null
 
     # Run the command as the specified user/group.
-    exec sudo -u \#$BUILDER_UID -g \#$BUILDER_GID -s -- "$@"
+    exec sudo -E -u \#$BUILDER_UID -g \#$BUILDER_GID -s -- "$@"
 else
     # Just run the command as root.
     exec "$@"
