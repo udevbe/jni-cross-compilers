@@ -129,6 +129,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
 #Therefore we just link the cups headers into our sysroot so they can be resolved
     ln -s /usr/include/cups/ ${SYS_ROOT}/include/ && \
     chmod +x configure && \
+    sync && \
     LDFLAGS="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" \
     LIBFFI_CFLAGS=$(pkg-config libffi --cflags) \
     ./configure --with-devkit=${CROSS_ROOT} --openjdk-target=${CROSS_TRIPLE} --with-tools-dir=/ \

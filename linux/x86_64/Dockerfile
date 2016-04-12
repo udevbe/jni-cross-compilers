@@ -80,6 +80,7 @@ RUN sync && \
 #BUG. --with-cups-include is only used during configuration and is not propagated to make when compiling
 #Therefore we just link the cups headers into our sysroot so they can be resolved
 RUN chmod +x configure && \
+    sync && \
     LIBFFI_CFLAGS=$(pkg-config libffi --cflags) \
     ./configure --with-tools-dir=/ \
                 --disable-freetype-bundling \
