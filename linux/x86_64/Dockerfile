@@ -1,6 +1,12 @@
 FROM zubnix/jni-cross-compilers:linux-source
 MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 
+ENV CROSS_ROOT /usr/toolchain
+
+#setup cmake toolchain file
+COPY Toolchain.cmake ${CROSS_ROOT}/
+ENV CMAKE_TOOLCHAIN_FILE ${CROSS_ROOT}/Toolchain.cmake
+
 #build libffi native (jdk native dep)
 WORKDIR /usr/src/libffi
 RUN ./autogen.sh && \
