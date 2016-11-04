@@ -4,10 +4,7 @@ MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 ENV CROSS_TRIPLE arm-linux-gnueabihf
 ENV CROSS_ROOT /usr/toolchain
 ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}/libc
-
-RUN export PKG_CONFIG_DIR=
-ENV PKG_CONFIG_LIBDIR ${SYSROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
-ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
+ENV PKG_CONFIG_PATH ${SYS_ROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
 
 # Raspberry Pi is ARMv6+VFP2, Debian armhf is ARMv7+VFP3
 # Since this Dockerfile is targeting linux-arm from Raspberry Pi onward,
@@ -17,8 +14,8 @@ ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
 # See: https://wiki.debian.org/RaspberryPi
 ENV RASPBERRYPI_TOOLS_COMMIT 108317fde2ffb56d1dc7f14ac69c42f34a49342a
 WORKDIR /usr/src
-COPY tools-${RASPBERRYPI_TOOLS_COMMIT}.tar.gz /usr/src
-RUN tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*" -f tools-${RASPBERRYPI_TOOLS_COMMIT}.tar.gz
+COPY ${RASPBERRYPI_TOOLS_COMMIT}.tar.gz /usr/src
+RUN tar xv --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*" -f ${RASPBERRYPI_TOOLS_COMMIT}.tar.gz
 RUN cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} && \
     rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}
 

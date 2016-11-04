@@ -4,14 +4,13 @@ MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 ENV CROSS_TRIPLE aarch64-linux-gnu
 ENV CROSS_ROOT /usr/toolchain
 ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}/libc
-
-RUN export PKG_CONFIG_DIR=
-ENV PKG_CONFIG_LIBDIR ${SYSROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
-ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
+ENV PKG_CONFIG_PATH ${SYS_ROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
 
 #linaro armv8_64
 WORKDIR ${CROSS_ROOT}
-RUN curl -L https://releases.linaro.org/15.06/components/toolchain/binaries/4.8/aarch64-linux-gnu/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz | tar xvJ -C ${CROSS_ROOT} --strip-components 1
+ENV CROSS_COMPILER gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz
+COPY ${CROSS_COMPILER} ${CROSS_ROOT}
+RUN tar xv -C ${CROSS_ROOT} --strip-components 1 -f ${CROSS_COMPILER}
 
 ENV PATH ${CROSS_ROOT}/bin:${PATH}
 
