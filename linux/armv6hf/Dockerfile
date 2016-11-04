@@ -3,7 +3,11 @@ MAINTAINER Erik De Rijcke "derijcke.erik@gmail.com"
 
 ENV CROSS_TRIPLE arm-linux-gnueabihf
 ENV CROSS_ROOT /usr/toolchain
-ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}
+ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}/libc
+
+RUN export PKG_CONFIG_DIR=
+ENV PKG_CONFIG_LIBDIR ${SYSROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
+ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
 
 # Raspberry Pi is ARMv6+VFP2, Debian armhf is ARMv7+VFP3
 # Since this Dockerfile is targeting linux-arm from Raspberry Pi onward,
@@ -11,13 +15,14 @@ ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}
 # We could use Debian's armel, but we'd have softfp and loose a good deal
 # of performance.
 # See: https://wiki.debian.org/RaspberryPi
-ENV RASPBERRYPI_TOOLS_COMMIT f5642106425d430e1f82ee064121a5fd0e05a386
+ENV RASPBERRYPI_TOOLS_COMMIT 108317fde2ffb56d1dc7f14ac69c42f34a49342a
 WORKDIR /usr/src
-RUN curl -L https://github.com/raspberrypi/tools/archive/${RASPBERRYPI_TOOLS_COMMIT}.tar.gz | tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*"
+COPY tools-${RASPBERRYPI_TOOLS_COMMIT}.tar.gz /usr/src
+RUN tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*" -f tools-${RASPBERRYPI_TOOLS_COMMIT}.tar.gz
 RUN cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} && \
     rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}
+
 ENV PATH ${CROSS_ROOT}/bin:${PATH}
-ENV PKG_CONFIG_PATH ${SYS_ROOT}/share/pkgconfig:${SYS_ROOT}/lib/pkgconfig:$PKG_CONFIG_PATH
 
 #setup cmake toolchain file
 COPY Toolchain.cmake ${CROSS_ROOT}/
@@ -26,7 +31,7 @@ ENV CMAKE_TOOLCHAIN_FILE ${CROSS_ROOT}/Toolchain.cmake
 #build libffi cross (jdk cross dep)
 WORKDIR /usr/src/libffi
 RUN ./autogen.sh && \
-    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT} && \
+    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT}/usr && \
     make && \
     make install && \
     cd /usr/src && \
@@ -35,7 +40,7 @@ RUN ./autogen.sh && \
 #build freetype cross (jkd cross dep)
 WORKDIR /usr/src/freetype
 RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
-          -DCMAKE_INSTALL_PREFIX:PATH=${SYS_ROOT} \
+          -DCMAKE_INSTALL_PREFIX:PATH=${SYS_ROOT}/usr \
           -DBUILD_SHARED_LIBS:BOOL=true . && \
     make && \
     make install && \
@@ -44,7 +49,7 @@ RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
 
 #build alsa cross (jdk cross dep)
 WORKDIR /usr/src/alsa
-RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT} && \
+RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT}/usr && \
     make && \
     make install && \
     cd /usr/src && \
@@ -52,7 +57,7 @@ RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} 
 
 #build zlib cross (X cross dep)
 WORKDIR /usr/src/zlib
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT} && \
+RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT}/usr && \
     make && \
     make install && \
     cd /usr/src && \
@@ -60,7 +65,7 @@ RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib .
 
 #build libpng cross (X cross dep)
 WORKDIR /usr/src/png
-RUN LDFLAGS="-L${SYS_ROOT}/usr/local/lib" CPPFLAGS="-I${SYS_ROOT}/usr/local/include" ./configure --prefix=${SYS_ROOT}  --host=${CROSS_TRIPLE} && \
+RUN ./configure --prefix=${SYS_ROOT}/usr  --host=${CROSS_TRIPLE} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -68,7 +73,7 @@ RUN LDFLAGS="-L${SYS_ROOT}/usr/local/lib" CPPFLAGS="-I${SYS_ROOT}/usr/local/incl
 
 #build expat cross (X cross dep)
 WORKDIR /usr/src/expat
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT} --host=${CROSS_TRIPLE} && \
+RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT}/usr --host=${CROSS_TRIPLE} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -76,7 +81,7 @@ RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT
 
 #build openssl cross (X cross dep)
 WORKDIR /usr/src/openssl
-RUN ./Configure dist --prefix=${SYS_ROOT} && \
+RUN ./Configure dist --prefix=${SYS_ROOT}/usr && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw && \
     cd /usr/src && \
@@ -84,28 +89,20 @@ RUN ./Configure dist --prefix=${SYS_ROOT} && \
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
-#for some strange reason, we need to install the host x11 dev files, else the build fails.
-RUN apt-get -y install libx11-dev && \
-    CONFFLAGS="--disable-static \
+RUN CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
-               --prefix=${SYS_ROOT} \
+               --prefix=${SYS_ROOT}/usr \
                --build=x86_64-unknown-linux-gnu" \
     CC_FOR_BUILD="/usr/bin/gcc" \
-    ACLOCAL="aclocal -I ${SYS_ROOT}/share/aclocal/" \
-    #we only build the minimal required modules needed by the jdk
+    ACLOCAL="aclocal -I ${SYS_ROOT}/usr/share/aclocal/" \
     ./build.sh --clone --modfile xorg-modules && \
     cd /usr/src && \
-    rm -rf /usr/src/xorg && \
-    apt-get remove -y libx11-dev && \
-    apt-get clean && \
-    apt-get autoclean && \
-    apt-get autoremove -y
+    rm -rf /usr/src/xorg
 
 #build openjdk cross
 WORKDIR /usr/src/jdk
-RUN sync && \
-    chmod +x get_source.sh && \
+RUN chmod +x get_source.sh && \
     sync && \
     ./get_source.sh
 
@@ -127,26 +124,23 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
 
 #BUG. --with-cups-include is only used during configuration and is not propagated to make when compiling
 #Therefore we just link the cups headers into our sysroot so they can be resolved
-    ln -s /usr/include/cups/ ${SYS_ROOT}/include/ && \
+    ln -s /usr/include/cups/ ${SYS_ROOT}/usr/include/ && \
     chmod +x configure && \
     sync && \
-    LDFLAGS="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" \
-    LIBFFI_CFLAGS=$(pkg-config libffi --cflags) \
-    ./configure --with-devkit=${CROSS_ROOT} --openjdk-target=${CROSS_TRIPLE} --with-tools-dir=/ \
+    ./configure --with-devkit=${CROSS_ROOT} --openjdk-target=${CROSS_TRIPLE} --with-tools-dir=${SYS_ROOT} \
                 --disable-freetype-bundling \
                 --with-cups-include=/usr/include/cups/ \
-                --with-freetype-include=${SYS_ROOT}/include/freetype2 \
-                --with-freetype-lib=${SYS_ROOT}/lib \
-                --with-freetype=${SYS_ROOT} \
+                --with-freetype-include=${SYS_ROOT}/usr/include/freetype2 \
+                --with-freetype-lib=${SYS_ROOT}/usr/lib \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --prefix=${SYS_ROOT} \
-                --with-extra-ldflags="-L${SYS_ROOT}/lib/ -Wl,--rpath -Wl,${SYS_ROOT}/lib/" && \
+                --prefix=${SYS_ROOT}/usr/lib \
+                && \
     make images && \
     make install && \
     cd /usr && \
-    rm -rf /usr/src
+    rm -rf /usr/src/*
 
 RUN apt-get remove -y mercurial unzip zip git curl && \
     apt-get clean && \
