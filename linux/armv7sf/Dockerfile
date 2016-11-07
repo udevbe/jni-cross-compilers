@@ -137,7 +137,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --prefix=${PREFIX} \
+                --prefix=${PREFIX}/lib \
                 && \
     make images && \
     make install && \

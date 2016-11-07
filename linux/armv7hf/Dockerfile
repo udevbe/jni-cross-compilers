@@ -16,8 +16,10 @@ ENV PREFIX ${SYS_ROOT}/usr
 ENV PKG_CONFIG_PATH ${PREFIX}/lib/pkgconfig:${PREFIX}/share/pkgconfig
 
 #linaro armv7hf
-WORKDIR ${CROSS_ROOT}
-RUN curl -L https://releases.linaro.org/15.06/components/toolchain/binaries/4.8/arm-linux-gnueabihf/gcc-linaro-4.8-2015.06-x86_64_arm-linux-gnueabihf.tar.xz | tar xvJ -C ${CROSS_ROOT} --strip-components 1
+ENV CROSS_COMPILER gcc-linaro-6.1.1-2016.08-x86_64_arm-linux-gnueabihf.tar.xz
+WORKDIR /usr/toolchain
+COPY ${CROSS_COMPILER} /usr/src
+RUN tar xvf /usr/src/${CROSS_COMPILER} -C ${CROSS_ROOT} --strip-components 1
 
 ENV PATH ${CROSS_ROOT}/bin:${PATH}
 
@@ -134,7 +136,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --prefix=${PREFIX} \
+                --prefix=${PREFIX}/lib \
                 && \
     make images && \
     make install && \

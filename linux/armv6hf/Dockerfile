@@ -23,8 +23,8 @@ ENV PKG_CONFIG_PATH ${PREFIX}/lib/pkgconfig:${PREFIX}/share/pkgconfig
 # See: https://wiki.debian.org/RaspberryPi
 ENV RASPBERRYPI_TOOLS_COMMIT 108317fde2ffb56d1dc7f14ac69c42f34a49342a
 WORKDIR /usr/src
-COPY tools-${RASPBERRYPI_TOOLS_COMMIT}.tar.gz /usr/src
-RUN tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*" -f tools-${RASPBERRYPI_TOOLS_COMMIT}.tar.gz
+COPY ${RASPBERRYPI_TOOLS_COMMIT}.tar.gz /usr/src
+RUN tar xvz --wildcards --no-anchored "*gcc-linaro-${CROSS_TRIPLE}-raspbian*" -f ${RASPBERRYPI_TOOLS_COMMIT}.tar.gz
 RUN cp -r /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}/arm-bcm2708/gcc-linaro-${CROSS_TRIPLE}-raspbian-x64/ ${CROSS_ROOT} && \
     rm -rf /usr/src/tools-${RASPBERRYPI_TOOLS_COMMIT}
 
@@ -95,8 +95,9 @@ RUN ./Configure dist --prefix=${PREFIX} && \
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
-#because x11 makekeys build is broken on cross compilation, we need to tell our native gcc to include hard float headers...
-RUN CONFFLAGS="--disable-static \
+#for some strange reason, we need to install the host x11 dev files, else the build fails.
+RUN apt-get -y install libx11-dev && \
+    CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
                --prefix=${PREFIX} \
@@ -135,6 +136,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     ln -s /usr/include/cups/ ${SYS_ROOT}/usr/include/ && \
     chmod +x configure && \
     sync && \
+    LIBFFI_CFLAGS=$(pkg-config libffi --cflags) \
     ./configure --with-devkit=${CROSS_ROOT} --openjdk-target=${CROSS_TRIPLE} --with-tools-dir=${SYS_ROOT} \
                 --disable-freetype-bundling \
                 --with-cups-include=/usr/include/cups/ \
@@ -143,7 +145,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --prefix=${PREFIX} \
+                --prefix=${PREFIX}/lib \
                 && \
     make images && \
     make install && \

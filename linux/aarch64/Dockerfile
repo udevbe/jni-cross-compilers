@@ -5,13 +5,21 @@ ENV CROSS_TRIPLE aarch64-linux-gnu
 ENV CROSS_ROOT /usr/toolchain
 ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
-RUN export PKG_CONFIG_DIR=
-ENV PKG_CONFIG_LIBDIR ${SYS_ROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
-ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
+#we can not cross compile 'the right way' as libxcb can not properly find it's headers & sources
+#ENV PREFIX /usr
+#RUN export PKG_CONFIG_DIR=
+#ENV PKG_CONFIG_LIBDIR ${SYS_ROOT}${PREFIX}/lib/pkgconfig:${SYS_ROOT}${PREFIX}/share/pkgconfig
+#ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
+
+#workaround PKG_CONFIG setup for libxcb:
+ENV PREFIX ${SYS_ROOT}/usr
+ENV PKG_CONFIG_PATH ${PREFIX}/lib/pkgconfig:${PREFIX}/share/pkgconfig
 
 #linaro armv8_64
 WORKDIR ${CROSS_ROOT}
-RUN curl -L https://releases.linaro.org/15.06/components/toolchain/binaries/4.8/aarch64-linux-gnu/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz | tar xvJ -C ${CROSS_ROOT} --strip-components 1
+ENV CROSS_COMPILER gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz
+COPY ${CROSS_COMPILER} ${CROSS_ROOT}
+RUN tar xv -C ${CROSS_ROOT} --strip-components 1 -f ${CROSS_COMPILER}
 
 ENV PATH ${CROSS_ROOT}/bin:${PATH}
 
@@ -22,7 +30,7 @@ ENV CMAKE_TOOLCHAIN_FILE ${CROSS_ROOT}/Toolchain.cmake
 #build libffi cross (jdk cross dep)
 WORKDIR /usr/src/libffi
 RUN ./autogen.sh && \
-    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT}/usr && \
+    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${PREFIX} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -31,7 +39,7 @@ RUN ./autogen.sh && \
 #build freetype cross (jkd cross dep)
 WORKDIR /usr/src/freetype
 RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
-          -DCMAKE_INSTALL_PREFIX:PATH=${SYS_ROOT}/usr \
+          -DCMAKE_INSTALL_PREFIX:PATH=${PREFIX} \
           -DBUILD_SHARED_LIBS:BOOL=true . && \
     make && \
     make install && \
@@ -40,7 +48,7 @@ RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
 
 #build alsa cross (jdk cross dep)
 WORKDIR /usr/src/alsa
-RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT}/usr && \
+RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${PREFIX} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -48,7 +56,7 @@ RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} 
 
 #build zlib cross (X cross dep)
 WORKDIR /usr/src/zlib
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT}/usr && \
+RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${PREFIX} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -56,7 +64,7 @@ RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib .
 
 #build libpng cross (X cross dep)
 WORKDIR /usr/src/png
-RUN ./configure --prefix=${SYS_ROOT}/usr  --host=${CROSS_TRIPLE} && \
+RUN ./configure --prefix=${PREFIX} --host=${CROSS_TRIPLE} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -67,7 +75,7 @@ WORKDIR /usr/src/expat/conftools
 RUN cp -f /usr/share/misc/config.sub config.sub
 RUN cp -f /usr/share/misc/config.guess config.guess
 WORKDIR /usr/src/expat
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT}/usr --host=${CROSS_TRIPLE} && \
+RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${PREFIX} --host=${CROSS_TRIPLE} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -75,7 +83,7 @@ RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT
 
 #build openssl cross (X cross dep)
 WORKDIR /usr/src/openssl
-RUN ./Configure dist --prefix=${SYS_ROOT}/usr && \
+RUN ./Configure dist --prefix=${PREFIX} && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw && \
     cd /usr/src && \
@@ -86,10 +94,10 @@ WORKDIR /usr/src/xorg
 RUN CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
-               --prefix=${SYS_ROOT}/usr \
+               --prefix=${PREFIX} \
                --build=x86_64-unknown-linux-gnu" \
     CC_FOR_BUILD="/usr/bin/gcc" \
-    ACLOCAL="aclocal -I ${SYS_ROOT}/usr/share/aclocal/" \
+    ACLOCAL="aclocal -I ${PREFIX}/share/aclocal/" \
     ./build.sh --clone --modfile xorg-modules && \
     cd /usr/src && \
     rm -rf /usr/src/xorg
@@ -125,7 +133,6 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     ln -s /usr/include/cups/ ${SYS_ROOT}/usr/include/ && \
     chmod +x configure && \
     sync && \
-    LIBFFI_CFLAGS=$(pkg-config libffi --cflags) \
     ./configure --with-devkit=${CROSS_ROOT} --openjdk-target=${CROSS_TRIPLE} --with-tools-dir=${SYS_ROOT} \
                 --disable-freetype-bundling \
                 --with-cups-include=/usr/include/cups/ \
@@ -134,7 +141,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --prefix=${SYS_ROOT}/usr/lib \
+                --prefix=${PREFIX}/lib \
                 && \
     make images && \
     make install && \
