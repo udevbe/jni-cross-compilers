@@ -5,9 +5,15 @@ ENV CROSS_TRIPLE arm-linux-gnueabihf
 ENV CROSS_ROOT /usr/toolchain
 ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
-RUN export PKG_CONFIG_DIR=
-ENV PKG_CONFIG_LIBDIR ${SYSROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
-ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
+#we can not cross compile 'the right way' as libxcb can not properly find it's headers & sources
+#ENV PREFIX /usr
+#RUN export PKG_CONFIG_DIR=
+#ENV PKG_CONFIG_LIBDIR ${SYS_ROOT}${PREFIX}/lib/pkgconfig:${SYS_ROOT}${PREFIX}/share/pkgconfig
+#ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
+
+#workaround PKG_CONFIG setup for libxcb:
+ENV PREFIX ${SYS_ROOT}/usr
+ENV PKG_CONFIG_PATH ${PREFIX}/lib/pkgconfig:${PREFIX}/share/pkgconfig
 
 # Raspberry Pi is ARMv6+VFP2, Debian armhf is ARMv7+VFP3
 # Since this Dockerfile is targeting linux-arm from Raspberry Pi onward,
@@ -31,7 +37,7 @@ ENV CMAKE_TOOLCHAIN_FILE ${CROSS_ROOT}/Toolchain.cmake
 #build libffi cross (jdk cross dep)
 WORKDIR /usr/src/libffi
 RUN ./autogen.sh && \
-    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${SYS_ROOT}/usr && \
+    ./configure --host=${CROSS_TRIPLE} --with-sysroot=${SYS_ROOT} --prefix=${PREFIX} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -40,7 +46,7 @@ RUN ./autogen.sh && \
 #build freetype cross (jkd cross dep)
 WORKDIR /usr/src/freetype
 RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
-          -DCMAKE_INSTALL_PREFIX:PATH=${SYS_ROOT}/usr \
+          -DCMAKE_INSTALL_PREFIX:PATH=${PREFIX} \
           -DBUILD_SHARED_LIBS:BOOL=true . && \
     make && \
     make install && \
@@ -49,7 +55,7 @@ RUN cmake -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
 
 #build alsa cross (jdk cross dep)
 WORKDIR /usr/src/alsa
-RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${SYS_ROOT}/usr && \
+RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} --prefix=${PREFIX} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -57,7 +63,7 @@ RUN CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ./configure --host=${CROSS_TRIPLE} 
 
 #build zlib cross (X cross dep)
 WORKDIR /usr/src/zlib
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${SYS_ROOT}/usr && \
+RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib ./configure --prefix=${PREFIX} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -65,7 +71,7 @@ RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc RANLIB=${CROSS_TRIPLE}-ranlib .
 
 #build libpng cross (X cross dep)
 WORKDIR /usr/src/png
-RUN ./configure --prefix=${SYS_ROOT}/usr  --host=${CROSS_TRIPLE} && \
+RUN ./configure --prefix=${PREFIX} --host=${CROSS_TRIPLE} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -73,7 +79,7 @@ RUN ./configure --prefix=${SYS_ROOT}/usr  --host=${CROSS_TRIPLE} && \
 
 #build expat cross (X cross dep)
 WORKDIR /usr/src/expat
-RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT}/usr --host=${CROSS_TRIPLE} && \
+RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${PREFIX} --host=${CROSS_TRIPLE} && \
     make && \
     make install && \
     cd /usr/src && \
@@ -81,7 +87,7 @@ RUN AR=${CROSS_TRIPLE}-ar CC=${CROSS_TRIPLE}-gcc ./configure --prefix=${SYS_ROOT
 
 #build openssl cross (X cross dep)
 WORKDIR /usr/src/openssl
-RUN ./Configure dist --prefix=${SYS_ROOT}/usr && \
+RUN ./Configure dist --prefix=${PREFIX} && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" && \
     make CC="${CROSS_TRIPLE}-gcc" AR="${CROSS_TRIPLE}-ar r" RANLIB="${CROSS_TRIPLE}-ranlib" install_sw && \
     cd /usr/src && \
@@ -89,20 +95,22 @@ RUN ./Configure dist --prefix=${SYS_ROOT}/usr && \
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
+#because x11 makekeys build is broken on cross compilation, we need to tell our native gcc to include hard float headers...
 RUN CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
-               --prefix=${SYS_ROOT}/usr \
+               --prefix=${PREFIX} \
                --build=x86_64-unknown-linux-gnu" \
-    CC_FOR_BUILD="/usr/bin/gcc" \
-    ACLOCAL="aclocal -I ${SYS_ROOT}/usr/share/aclocal/" \
+    CC_FOR_BUILD="/usr/bin/gcc -D __ARM_PCS_VFP" \
+    ACLOCAL="aclocal -I ${PREFIX}/share/aclocal/" \
     ./build.sh --clone --modfile xorg-modules && \
     cd /usr/src && \
     rm -rf /usr/src/xorg
 
 #build openjdk cross
 WORKDIR /usr/src/jdk
-RUN chmod +x get_source.sh && \
+RUN sync && \
+    chmod +x get_source.sh && \
     sync && \
     ./get_source.sh
 
@@ -135,7 +143,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
                 --with-jvm-variants=zero \
                 --disable-debug-symbols \
                 --with-jvm-interpreter=cpp \
-                --prefix=${SYS_ROOT}/usr/lib \
+                --prefix=${PREFIX} \
                 && \
     make images && \
     make install && \

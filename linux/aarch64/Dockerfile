@@ -6,7 +6,7 @@ ENV CROSS_ROOT /usr/toolchain
 ENV SYS_ROOT ${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
 RUN export PKG_CONFIG_DIR=
-ENV PKG_CONFIG_LIBDIR ${SYSROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
+ENV PKG_CONFIG_LIBDIR ${SYS_ROOT}/usr/lib/pkgconfig:${SYS_ROOT}/usr/share/pkgconfig
 ENV PKG_CONFIG_SYSROOT_DIR ${SYS_ROOT}
 
 #linaro armv8_64
@@ -125,6 +125,7 @@ RUN ln -s ${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc ${CROSS_ROOT}/bin/gcc && \
     ln -s /usr/include/cups/ ${SYS_ROOT}/usr/include/ && \
     chmod +x configure && \
     sync && \
+    LIBFFI_CFLAGS=$(pkg-config libffi --cflags) \
     ./configure --with-devkit=${CROSS_ROOT} --openjdk-target=${CROSS_TRIPLE} --with-tools-dir=${SYS_ROOT} \
                 --disable-freetype-bundling \
                 --with-cups-include=/usr/include/cups/ \
