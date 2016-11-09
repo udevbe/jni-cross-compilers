@@ -8,7 +8,7 @@ set(jvm_arch i386)
 set(CMAKE_C_COMPILER ${cross_root}/bin/${cross_triple}-gcc)
 set(CMAKE_CXX_COMPILER ${cross_root}/bin/${cross_triple}-g++)
 
-set(CMAKE_SYSROOT ${cross_root}/${cross_triple}/libc)
+set(CMAKE_SYSROOT ${cross_root}/${cross_triple}/sysroot)
 set(CMAKE_PREFIX_PATH ${CMAKE_SYSROOT}/usr)
 set(CMAKE_FIND_ROOT_PATH ${CMAKE_SYSROOT})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)

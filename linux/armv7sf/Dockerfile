@@ -89,7 +89,6 @@ RUN ./Configure dist --prefix=${PREFIX} && \
 
 #build X cross (jdk cross dep)
 WORKDIR /usr/src/xorg
-#because x11 makekeys build is broken on cross compilation, we need to install the host x11 dev files, else the build fails.
 RUN CONFFLAGS="--disable-static \
                --enable-malloc0returnsnull \
                --host=${CROSS_TRIPLE} \
