@@ -16,6 +16,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(JAVA_AWT_LIBRARY ${CMAKE_PREFIX_PATH}/lib/jvm/openjdk-1.8.0-internal/jre/lib/${jvm_arch}/libjawt.so)
-set(JAVA_JVM_LIBRARY ${CMAKE_PREFIX_PATH}/lib/jvm/openjdk-1.8.0-internal/jre/lib/${jvm_arch}/server/libjvm.so)
+set(JAVA_JVM_LIBRARY ${CMAKE_PREFIX_PATH}/lib/jvm/openjdk-1.8.0-internal/jre/lib/${jvm_arch}/client/libjvm.so)
 set(JAVA_INCLUDE_PATH ${CMAKE_PREFIX_PATH}/lib/jvm/openjdk-1.8.0-internal/include/)
 set(JAVA_INCLUDE_PATH2 ${CMAKE_PREFIX_PATH}/lib/jvm/openjdk-1.8.0-internal/include/linux/)

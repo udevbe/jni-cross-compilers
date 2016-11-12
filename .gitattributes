@@ -1,0 +1,4 @@
+linux/armv6hf/108317fde2ffb56d1dc7f14ac69c42f34a49342a.tar.gz filter=lfs diff=lfs merge=lfs -text
+linux/aarch64/gcc-linaro-4.8-2015.06-x86_64_aarch64-linux-gnu.tar.xz filter=lfs diff=lfs merge=lfs -text
+linux/armv7sf/gcc-linaro-6.1.1-2016.08-x86_64_arm-linux-gnueabi.tar.xz filter=lfs diff=lfs merge=lfs -text
+linux/armv7hf/gcc-linaro-6.1.1-2016.08-x86_64_arm-linux-gnueabihf.tar.xz filter=lfs diff=lfs merge=lfs -text

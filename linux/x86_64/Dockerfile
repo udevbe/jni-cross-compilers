@@ -94,6 +94,7 @@ RUN chmod +x configure && \
                 --with-freetype-lib=/usr/local/lib \
                 --with-cups-include=/usr/include/cups/ \
                 --with-jvm-variants=zero \
+                --with-extra-cflags=-Wno-error \
                 --disable-debug-symbols && \
     make images && \
     make install && \
